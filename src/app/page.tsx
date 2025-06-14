@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Upload, Download, FileSpreadsheet, Loader2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Loader2, AlertTriangle, ChevronLeft, ChevronRight, Key } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface NumberValidation {
@@ -17,6 +17,7 @@ export default function Home() {
   const [validations, setValidations] = useState<NumberValidation[]>([]);
   const [progress, setProgress] = useState(0);
   const [fileError, setFileError] = useState('');
+  const [apiKeyError, setApiKeyError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -32,6 +33,7 @@ export default function Home() {
     if (!file) return;
 
     setFileError('');
+    setApiKeyError(''); // Clear API key error when uploading new file
     setCurrentPage(1); // Reset to first page
     
     const reader = new FileReader();
@@ -69,9 +71,14 @@ export default function Home() {
     if (!apiKey || validations.length === 0) return;
     
     setIsProcessing(true);
+    setApiKeyError(''); // Clear any previous API key errors
     const newValidations = [...validations];
+    let hasApiKeyError = false;
     
     for (let i = 0; i < validations.length; i++) {
+      // If we already encountered an API key error, stop processing
+      if (hasApiKeyError) break;
+      
       // Mark current number as processing
       newValidations[i] = {
         ...newValidations[i],
@@ -82,6 +89,20 @@ export default function Home() {
       try {
         const response = await fetch(`/api/validate?number=${encodeURIComponent(validations[i].number)}&apiKey=${encodeURIComponent(apiKey)}`);
         const data = await response.json();
+        
+        // Check for API key error
+        if (data.status === false && data.error === "Invalid API Key") {
+          setApiKeyError("Invalid API Key detected. Please check your API key and make sure it's correct.");
+          hasApiKeyError = true;
+          
+          // Mark current number as not processing
+          newValidations[i] = {
+            ...newValidations[i],
+            isProcessing: false,
+          };
+          setValidations([...newValidations]);
+          break;
+        }
         
         newValidations[i] = {
           ...newValidations[i],
@@ -104,7 +125,9 @@ export default function Home() {
     }
     
     setIsProcessing(false);
-    setProgress(0);
+    if (!hasApiKeyError) {
+      setProgress(0);
+    }
   };
 
   const downloadResults = () => {
@@ -177,6 +200,29 @@ export default function Home() {
             </div>
           )}
 
+          {/* API Key Error */}
+          {apiKeyError && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start">
+                <Key className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+                <div className="text-sm text-red-800">
+                  <p className="font-semibold mb-2">❌ API Key Error</p>
+                  <p className="mb-2">{apiKeyError}</p>
+                  <div className="bg-red-100 p-3 rounded-md">
+                    <p className="font-medium mb-1">How to get your API key:</p>
+                    <ol className="ml-4 list-decimal space-y-1">
+                      <li>Visit <a href="https://proweblook.com" target="_blank" rel="noopener noreferrer" className="underline font-medium text-red-900">proweblook.com</a></li>
+                      <li>Sign up or log in to your account</li>
+                      <li>Navigate to your dashboard to find your API key</li>
+                      <li>Copy and paste the correct API key above</li>
+                    </ol>
+                    <p className="mt-2 text-xs">Need help? Contact us at <a href="mailto:info@proweblook.com" className="underline font-medium">info@proweblook.com</a></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -185,11 +231,21 @@ export default function Home() {
               <input
                 type="text"
                 value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
+                onChange={(e) => {
+                  setApiKey(e.target.value);
+                  setApiKeyError(''); // Clear error when user types
+                }}
                 disabled={isProcessing}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                placeholder="Enter your API key"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  apiKeyError ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
+                placeholder="Enter your API key from proweblook.com"
               />
+              {!apiKeyError && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Get your API key from <a href="https://proweblook.com" target="_blank" rel="noopener noreferrer" className="underline text-blue-600">proweblook.com</a>
+                </p>
+              )}
             </div>
 
             <div>
@@ -234,7 +290,7 @@ export default function Home() {
                 </div>
 
                 {/* Progress Bar */}
-                {isProcessing && (
+                {isProcessing && !apiKeyError && (
                   <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-medium text-gray-700">Validation Progress</span>
