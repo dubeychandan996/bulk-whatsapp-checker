@@ -179,7 +179,7 @@ export default function Home() {
             Use this tool to check if WhatsApp numbers are valid and active.<br />
             Get your API key from proweblook.com.<br />
             Upload your file to start validating (Maximum 5000 numbers per file).<br />
-            Need help? <a href="http://proweblook.com/sample-wa-sheet.csv" target="_blank" rel="noopener noreferrer"><u>Download a sample file here</u></a>
+            Need help? <a href="https://proweblook.com/sample-wa-sheet.csv" target="_blank" rel="noopener noreferrer"><u>Download a sample file here</u></a>
           </p>
           <p>&nbsp;</p>
 
