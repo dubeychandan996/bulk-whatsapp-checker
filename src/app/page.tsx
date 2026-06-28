@@ -20,6 +20,7 @@ export default function Home() {
   const [apiKeyError, setApiKeyError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50);
+  const [hideApiKey, setHideApiKey] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -27,6 +28,9 @@ export default function Home() {
     const fromUrl = params.get('api_key') || params.get('apiKey');
     if (fromUrl) {
       setApiKey(fromUrl);
+    }
+    if (params.get('hide_api_key') === '1' || params.get('hideApiKey') === '1') {
+      setHideApiKey(true);
     }
   }, []);
 
@@ -185,7 +189,9 @@ export default function Home() {
           <p>
             Check WhatsApp Numbers Easily<br />
             Use this tool to check if WhatsApp numbers are valid and active.<br />
-            Get your API key from proweblook.com.<br />
+            {!hideApiKey && (
+              <>Get your API key from proweblook.com.<br /></>
+            )}
             Upload your file to start validating (Maximum 5000 numbers per file).<br />
             Need help? <a href="https://proweblook.com/sample-wa-sheet.csv" target="_blank" rel="noopener noreferrer"><u>Download a sample file here</u></a>
           </p>
@@ -232,7 +238,7 @@ export default function Home() {
           )}
 
           <div className="space-y-4">
-            <div>
+            <div className={hideApiKey ? 'hidden' : undefined}>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 API Key
               </label>
