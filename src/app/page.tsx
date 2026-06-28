@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Upload, Download, FileSpreadsheet, Loader2, AlertTriangle, ChevronLeft, ChevronRight, Key } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -21,6 +21,14 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get('api_key') || params.get('apiKey');
+    if (fromUrl) {
+      setApiKey(fromUrl);
+    }
+  }, []);
 
   // Pagination calculations
   const totalPages = Math.ceil(validations.length / itemsPerPage);
